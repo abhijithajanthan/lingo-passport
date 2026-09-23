@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lingo Passport — Voice Vocabulary Coach</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    color-scheme: light;
+    --bg: #EEF2F6;
+    --paper: #FFFFFF;
+    --input-bg: #FBFCFD;
+    --ink: #1F2933;
+    --ink-soft: #5B6572;
+    --line: #DCE3EA;
+    --primary: #3D7A6B;
+    --primary-dark: #2C5B4F;
+    --primary-tint: #E3EFEC;
+    --gold: #D69A22;
+    --gold-tint: #FBF0DA;
+    --danger: #B4453C;
+    --danger-tint: #F6E7E5;
+    --radius: 18px;
+    --shadow: 0 10px 30px rgba(31,41,51,0.08);
+    --serif: "Fraunces", Georgia, serif;
+    --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg: #12161A;
+    --paper: #1B2126;
+    --input-bg: #21282E;
+    --ink: #ECEFF2;
+    --ink-soft: #9CA7B2;
+    --line: #303941;
+    --primary: #6FB4A0;
+    --primary-dark: #8FD0BC;
+    --primary-tint: #1E2C28;
+    --gold: #E7BD6C;
+    --gold-tint: #2E2718;
+    --danger: #E28A7E;
+    --danger-tint: #332221;
+    --shadow: 0 10px 30px rgba(0,0,0,0.45);
+  }
+  html{ scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *{ box-sizing: border-box; }
+  button, input{ color: var(--ink); }
+  body{
+    margin:0;
+    min-height:100%;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 15% 0%, var(--paper) 0%, var(--bg) 55%);
+    color: var(--ink);
+    font-family: var(--sans);
+    display:flex;
+    justify-content:center;
+    padding: 32px 16px calc(32px + env(safe-area-inset-bottom, 0px));
+    transition: background-color .2s ease, color .2s ease;
+  }
+  #app{ width:100%; max-width: 460px; }
+
+  .wordmark{
+    display:flex; align-items:baseline; gap:8px;
+    justify-content:center; margin-bottom: 22px;
+  }
+  .wordmark .mark{ font-family: var(--serif); font-size: 26px; font-weight:600; color: var(--primary-dark); }
+  .wordmark .tag{ font-size: 13px; color: var(--ink-soft); }
+
+  .topbar{
+    display:none;
+    align-items:center; justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .topbar.show{ display:flex; }
+  .topbar .brand{ font-family: var(--serif); font-size:20px; font-weight:600; color:var(--primary-dark); }
+  .stat-pill{
+    display:inline-flex; align-items:center; gap:6px;
+    background: var(--paper); border:1px solid var(--line); border-radius:999px;
+    padding:6px 12px; font-size:14px; font-weight:600; margin-left:8px;
+  }
+  .stats{ display:flex; }
+
+  .card{
+    background: var(--paper);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--line);
+    padding: 30px 26px;
+  }
+
+  .steps{ display:flex; gap:6px; justify-content:center; margin-bottom:22px; }
+  .steps span{ width:8px; height:8px; border-radius:50%; background: var(--line); }
+  .steps span.done{ background: var(--primary); }
+  .steps span.now{ background: var(--gold); }
+
+  h1.title{ font-family: var(--serif); font-size:26px; font-weight:600; margin: 0 0 6px; color: var(--ink); }
+  p.subtitle{ color: var(--ink-soft); margin: 0 0 22px; line-height:1.5; font-size:15px; }
+
+  label{ display:block; font-size:13px; font-weight:600; color: var(--ink-soft); margin-bottom:6px; }
+  input[type=text], input[type=password]{
+    width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line);
+    font-family: var(--sans); font-size:15px; margin-bottom:16px; background: var(--input-bg);
+  }
+  input:focus-visible, button:focus-visible{ outline: 2px solid var(--primary); outline-offset:2px; }
+
+  .btn-primary{
+    width:100%; padding:13px 16px; border:none; border-radius:12px;
+    background: var(--primary); color:#fff; font-family: var(--sans);
+    font-size:15px; font-weight:600; cursor:pointer; transition: background .15s ease;
+  }
+  .btn-primary:hover{ background: var(--primary-dark); }
+  .btn-primary:disabled{ background:#A9BEB8; cursor:not-allowed; }
+
+  .btn-ghost{
+    width:100%; padding:12px 16px; border:1px solid var(--line); border-radius:12px;
+    background: transparent; color: var(--ink); font-family: var(--sans);
+    font-size:14px; font-weight:600; cursor:pointer; margin-top:10px;
+  }
+
+  .lang-grid{ display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:6px; }
+  .lang-card{
+    display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+    padding:14px; border:1px solid var(--line); border-radius:14px; background: var(--input-bg);
+    cursor:pointer; text-align:left; font-family: var(--sans); color: var(--ink);
+  }
+  .lang-card:hover{ border-color: var(--primary); background: var(--primary-tint); }
+  .lang-card .flag{ font-size:22px; }
+  .lang-card .name{ font-weight:600; font-size:14px; }
+
+  .level-choice{
+    display:flex; flex-direction:column; gap:10px; margin-bottom: 6px;
+  }
+  .level-card{
+    text-align:left; padding:14px 16px; border:1px solid var(--line); border-radius:14px;
+    background: var(--input-bg); cursor:pointer; font-family: var(--sans); color: var(--ink);
+  }
+  .level-card:hover{ border-color: var(--primary); background: var(--primary-tint); }
+  .level-card .lvl-name{ font-weight:700; font-size:15px; }
+  .level-card .lvl-desc{ font-size:13px; color: var(--ink-soft); margin-top:2px; }
+
+  .waveform{ display:flex; align-items:flex-end; gap:4px; height:34px; justify-content:center; margin: 4px 0 20px; }
+  .waveform span{
+    width:4px; border-radius:3px; background: var(--primary);
+    opacity:.55; animation: sway 1.4s ease-in-out infinite;
+  }
+  .waveform span:nth-child(1){ height:10px; animation-delay:0s; }
+  .waveform span:nth-child(2){ height:22px; animation-delay:.15s; }
+  .waveform span:nth-child(3){ height:32px; animation-delay:.3s; }
+  .waveform span:nth-child(4){ height:18px; animation-delay:.45s; }
+  .waveform span:nth-child(5){ height:26px; animation-delay:.6s; }
+  .waveform span:nth-child(6){ height:14px; animation-delay:.75s; }
+  .waveform span:nth-child(7){ height:24px; animation-delay:.9s; }
+  @keyframes sway{ 0%,100%{ transform: scaleY(.5);} 50%{ transform: scaleY(1);} }
+  .waveform.listening span{ background: var(--gold); opacity:.9; animation-duration:.6s; }
+
+  .quiz-progress{ font-size:13px; color: var(--ink-soft); font-weight:600; margin-bottom: 10px; }
+  .quiz-word{ font-family: var(--serif); font-size:30px; font-weight:600; margin-bottom:4px; }
+  .quiz-hint{ font-size:14px; color: var(--ink-soft); margin: 0 0 18px; }
+  .quiz-controls{ display:flex; gap:8px; margin-bottom:14px; }
+  .btn-icon{
+    flex:1; padding:10px; border-radius:12px; border:1px solid var(--line);
+    background: var(--input-bg); font-family: var(--sans); font-size:13px; font-weight:600; cursor:pointer;
+    color: var(--ink);
+  }
+  .btn-icon:hover{ border-color: var(--primary); }
+  .btn-icon.listening{ background: var(--gold-tint); border-color: var(--gold); }
+  .quiz-feedback{ margin-top:14px; font-size:14px; font-weight:600; min-height:20px; }
+  .quiz-feedback.is-correct{ color: var(--primary-dark); }
+  .quiz-feedback.is-wrong{ color: var(--danger); }
+
+  .passport-page{ border:1px dashed var(--line); border-radius:14px; padding:18px; margin-bottom:16px; }
+  .passport-row{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); }
+  .passport-row:last-child{ border-bottom:none; }
+  .passport-row .k{ color: var(--ink-soft); font-size:13px; }
+  .passport-row .v{ font-weight:700; font-size:15px; }
+
+  .badge{ display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:700; }
+  .badge.beginner{ background: var(--primary-tint); color: var(--primary-dark); }
+  .badge.intermediate{ background: var(--gold-tint); color:#8A6416; }
+  .badge.advanced{ background: var(--danger-tint); color: var(--danger); }
+
+  .code-row{ display:flex; gap:8px; margin-bottom:14px; }
+  .code-row input{ margin-bottom:0; flex:1; font-weight:700; letter-spacing:.5px; }
+  .code-row button{ white-space:nowrap; padding:0 14px; border-radius:12px; border:1px solid var(--line); background: var(--input-bg); font-weight:600; cursor:pointer; color: var(--ink); }
+
+  .section-label{ font-size:13px; font-weight:700; color: var(--ink-soft); margin: 20px 0 8px; }
+  .fine{ font-size:12px; color: var(--ink-soft); line-height:1.5; margin-top:14px; }
+
+  .screen{ display:none; }
+  .screen.active{ display:block; }
+
+  .theme-toggle{
+    position:fixed;
+    top: calc(14px + env(safe-area-inset-top, 0px));
+    right:16px;
+    z-index:20;
+  }
+  .ios-toggle{
+    position:relative;
+    width:52px; height:28px;
+    border-radius:999px;
+    background: var(--line);
+    border:none; cursor:pointer; padding:0 6px;
+    display:flex; align-items:center; justify-content:space-between;
+    transition: background-color .2s ease;
+  }
+  .ios-toggle .tog-knob{
+    position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%;
+    background: var(--paper); box-shadow: 0 1px 3px rgba(0,0,0,.35);
+    transition: transform .2s ease;
+  }
+  :root[data-theme="dark"] .ios-toggle{ background: var(--primary); }
+  :root[data-theme="dark"] .ios-toggle .tog-knob{ transform: translateX(24px); }
+
+  .topbar-actions{ display:flex; align-items:center; gap:8px; }
+  .logout-link{
+    background:none; border:none; color: var(--ink-soft); font-family: var(--sans);
+    font-size:13px; font-weight:600; cursor:pointer; padding:6px 4px; text-decoration:underline;
+  }
+  .logout-link:hover{ color: var(--ink); }
+
+  .otp-banner{
+    background: var(--gold-tint); border:1px solid var(--gold); border-radius:12px;
+    padding:12px 14px; font-size:13px; line-height:1.5; margin-bottom:16px; color: var(--ink);
+  }
+  .otp-code{
+    display:block; font-family: var(--serif); font-size:26px; font-weight:600;
+    letter-spacing:5px; color: var(--primary-dark); margin-top:6px;
+  }
+  .quiz-tag{ font-size:12px; color: var(--ink-soft); margin-left:8px; font-weight:500; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="theme-toggle">
+    <button type="button" class="ios-toggle" id="themeToggleBtn" onclick="toggleTheme()" aria-label="Toggle dark mode" aria-pressed="false">
+      <span class="tog-knob"></span>
+    </button>
+  </div>
+
+  <div class="topbar" id="topbar">
+    <div class="brand">Lingo Passport</div>
+    <div class="topbar-actions">
+      <span class="stat-pill" id="statStreak">🔥 0</span>
+      <span class="stat-pill" id="statCoins">🪙 0</span>
+      <button type="button" class="logout-link" onclick="handleLogout()">Log out</button>
+    </div>
+  </div>
+
+  <div class="wordmark" id="wordmark">
+    <span class="mark">Lingo Passport</span>
+    <span class="tag">learn by speaking</span>
+  </div>
+
+  <!-- LOGIN -->
+  <section class="screen active" id="screen-login">
+    <div class="card">
+      <h1 class="title">Welcome back</h1>
+      <p class="subtitle">This is a prototype — enter anything to continue. We simulate an email OTP as a second step.</p>
+
+      <div id="loginStep1">
+        <label for="loginUser">Username</label>
+        <input type="text" id="loginUser" placeholder="e.g. kannaa">
+        <label for="loginEmail">Email</label>
+        <input type="text" id="loginEmail" placeholder="you@example.com">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" placeholder="anything works">
+        <button class="btn-primary" type="button" onclick="sendOtp(false)">Send OTP to email</button>
+      </div>
+
+      <div id="loginStep2" style="display:none;">
+        <div class="otp-banner" id="otpBanner"></div>
+        <label for="otpInput">Enter the 6-digit code</label>
+        <input type="text" id="otpInput" placeholder="000000" maxlength="6" inputmode="numeric">
+        <button class="btn-primary" type="button" onclick="verifyOtp()">Verify &amp; log in</button>
+        <button class="btn-ghost" type="button" onclick="sendOtp(true)">Resend code</button>
+        <div id="otpError" class="quiz-feedback is-wrong" aria-live="polite"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LANGUAGE -->
+  <section class="screen" id="screen-language">
+    <div class="card">
+      <div class="steps"><span class="done"></span><span class="now"></span><span></span><span></span><span></span></div>
+      <h1 class="title">What do you want to learn?</h1>
+      <p class="subtitle">Pick a language to start your passport.</p>
+      <div class="lang-grid" id="langGrid"></div>
+    </div>
+  </section>
+
+  <!-- SELF-ASSESSED LEVEL -->
+  <section class="screen" id="screen-self-level">
+    <div class="card">
+      <div class="steps"><span class="done"></span><span class="done"></span><span class="now"></span><span></span><span></span></div>
+      <h1 class="title">Where do you think you're at?</h1>
+      <p class="subtitle" id="selfLevelSubtitle">Be honest — we'll check it with a quick voice round next.</p>
+      <div class="level-choice">
+        <button class="level-card" onclick="selectSelfLevel('beginner')">
+          <div class="lvl-name">Beginner</div>
+          <div class="lvl-desc">I know a few words, not much more.</div>
+        </button>
+        <button class="level-card" onclick="selectSelfLevel('intermediate')">
+          <div class="lvl-name">Intermediate</div>
+          <div class="lvl-desc">I can hold a basic conversation.</div>
+        </button>
+        <button class="level-card" onclick="selectSelfLevel('advanced')">
+          <div class="lvl-name">Advanced</div>
+          <div class="lvl-desc">I'm comfortable with complex topics.</div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ASSESSMENT INTRO -->
+  <section class="screen" id="screen-assessment-intro">
+    <div class="card">
+      <div class="steps"><span class="done"></span><span class="done"></span><span class="done"></span><span class="now"></span><span></span></div>
+      <h1 class="title">Let's check for real</h1>
+      <p class="subtitle">I'll say six English words, two easy, two medium, two hard. Say the translation out loud, or type it if you'd rather. There's a mic button and a text box for every word — use whichever's easier.</p>
+      <div class="waveform"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <button class="btn-primary" onclick="beginAssessment()">Start the voice check</button>
+    </div>
+  </section>
+
+  <!-- ASSESSMENT QUIZ -->
+  <section class="screen" id="screen-assessment">
+    <div class="card">
+      <div id="assessmentBody"></div>
+    </div>
+  </section>
+
+  <!-- RESULTS -->
+  <section class="screen" id="screen-results">
+    <div class="card">
+      <div class="steps"><span class="done"></span><span class="done"></span><span class="done"></span><span class="done"></span><span class="now"></span></div>
+      <h1 class="title" id="resultsTitle">Here's what we found</h1>
+      <p class="subtitle" id="resultsSubtitle"></p>
+      <div class="passport-page">
+        <div class="passport-row"><span class="k">You guessed</span><span class="v" id="resultsSelf"></span></div>
+        <div class="passport-row"><span class="k">Voice check found</span><span class="v" id="resultsActual"></span></div>
+      </div>
+      <button class="btn-primary" onclick="enterDashboard()">Continue to your passport</button>
+    </div>
+  </section>
+
+  <!-- DASHBOARD -->
+  <section class="screen" id="screen-dashboard">
+    <div class="card">
+      <h1 class="title">Your passport</h1>
+      <p class="subtitle" id="dashSubtitle"></p>
+
+      <div class="passport-page">
+        <div class="passport-row"><span class="k">Language</span><span class="v" id="dashLang"></span></div>
+        <div class="passport-row"><span class="k">Level</span><span class="v" id="dashLevel"></span></div>
+        <div class="passport-row"><span class="k">Day streak</span><span class="v" id="dashStreak"></span></div>
+        <div class="passport-row"><span class="k">Coins</span><span class="v" id="dashCoins"></span></div>
+        <div class="passport-row" id="dashReviewRow" style="display:none;"><span class="k">Words due for review</span><span class="v" id="dashReviewCount"></span></div>
+      </div>
+
+      <button class="btn-primary" id="challengeBtn" onclick="handleChallengeClick()">Start today's challenge</button>
+
+      <div class="section-label">Invite a fellow traveler</div>
+      <p class="subtitle" style="margin-bottom:10px;">Share your code. When a friend redeems one, you both get 50 bonus coins.</p>
+      <div class="code-row">
+        <input type="text" id="myReferralCode" readonly>
+        <button onclick="copyReferralCode()">Copy</button>
+      </div>
+      <div class="code-row">
+        <input type="text" id="referralInput" placeholder="Enter a friend's code">
+        <button onclick="redeemReferral()">Redeem</button>
+      </div>
+      <div class="passport-row"><span class="k">Referral points</span><span class="v" id="dashReferralPoints"></span></div>
+
+      <button class="btn-ghost" onclick="handleLogout()">Log out</button>
+      <p class="fine">Prototype note: progress is saved to this browser only (no account backend), and voice recognition needs Chrome with mic access — a text box is always available as a backup.</p>
+    </div>
+  </section>
+
+  <!-- CHALLENGE QUIZ -->
+  <section class="screen" id="screen-challenge">
+    <div class="card">
+      <div id="challengeBody"></div>
+    </div>
+  </section>
+
+  <!-- CHALLENGE RESULTS -->
+  <section class="screen" id="screen-challenge-results">
+    <div class="card">
+      <h1 class="title" id="chResultsTitle">Nice work</h1>
+      <p class="subtitle" id="chResultsSubtitle"></p>
+      <div class="passport-page">
+        <div class="passport-row"><span class="k">Correct</span><span class="v" id="chScore"></span></div>
+        <div class="passport-row"><span class="k">Coins earned</span><span class="v" id="chCoins"></span></div>
+        <div class="passport-row"><span class="k">Streak</span><span class="v" id="chStreak"></span></div>
+      </div>
+      <button class="btn-primary" onclick="backToDashboard()">Back to passport</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ---------- word banks ---------- */
+const LANGS = {
+  es: { name: 'Spanish', code: 'es-ES', flag: '🇪🇸', wordBank: {
+    beginner: [
+      {en:'house', target:'casa'}, {en:'cat', target:'gato'}, {en:'dog', target:'perro'},
+      {en:'water', target:'agua'}, {en:'to eat', target:'comer'}, {en:'friend', target:'amigo', alts:['amiga']},
+      {en:'book', target:'libro'}, {en:'good morning', target:'buenos dias', alts:['buenos días']}
+    ],
+    intermediate: [
+      {en:'although', target:'aunque'}, {en:'however', target:'sin embargo'}, {en:'to achieve', target:'lograr'},
+      {en:'environment', target:'medio ambiente'}, {en:'opportunity', target:'oportunidad'}, {en:'to improve', target:'mejorar'},
+      {en:'relationship', target:'relacion', alts:['relación']}, {en:'decision', target:'decision', alts:['decisión']}
+    ],
+    advanced: [
+      {en:'ambiguous', target:'ambiguo'}, {en:'to undermine', target:'socavar'}, {en:'resilience', target:'resiliencia'},
+      {en:'consequently', target:'por consiguiente'}, {en:'to strive', target:'esforzarse'}, {en:'outcome', target:'resultado'},
+      {en:'widespread', target:'generalizado'}, {en:'to acknowledge', target:'reconocer'}
+    ]
+  }},
+  fr: { name: 'French', code: 'fr-FR', flag: '🇫🇷', wordBank: {
+    beginner: [
+      {en:'house', target:'maison'}, {en:'cat', target:'chat'}, {en:'dog', target:'chien'},
+      {en:'water', target:'eau'}, {en:'to eat', target:'manger'}, {en:'friend', target:'ami', alts:['amie']},
+      {en:'book', target:'livre'}, {en:'good morning', target:'bonjour'}
+    ],
+    intermediate: [
+      {en:'although', target:'bien que'}, {en:'however', target:'cependant'}, {en:'to achieve', target:'atteindre'},
+      {en:'environment', target:'environnement'}, {en:'opportunity', target:'opportunite', alts:['opportunité']},
+      {en:'to improve', target:'ameliorer', alts:['améliorer']}, {en:'relationship', target:'relation'},
+      {en:'decision', target:'decision', alts:['décision']}
+    ],
+    advanced: [
+      {en:'ambiguous', target:'ambigu'}, {en:'to undermine', target:'saper'}, {en:'resilience', target:'resilience', alts:['résilience']},
+      {en:'consequently', target:'par consequent', alts:['par conséquent']}, {en:'to strive', target:"s'efforcer"},
+      {en:'outcome', target:'resultat', alts:['résultat']}, {en:'widespread', target:'repandu', alts:['répandu']},
+      {en:'to acknowledge', target:'reconnaitre', alts:['reconnaître']}
+    ]
+  }},
+  de: { name: 'German', code: 'de-DE', flag: '🇩🇪', wordBank: {
+    beginner: [
+      {en:'house', target:'haus'}, {en:'cat', target:'katze'}, {en:'dog', target:'hund'},
+      {en:'water', target:'wasser'}, {en:'to eat', target:'essen'}, {en:'friend', target:'freund', alts:['freundin']},
+      {en:'book', target:'buch'}, {en:'good morning', target:'guten morgen'}
+    ],
+    intermediate: [
+      {en:'although', target:'obwohl'}, {en:'however', target:'jedoch'}, {en:'to achieve', target:'erreichen'},
+      {en:'environment', target:'umwelt'}, {en:'opportunity', target:'gelegenheit'}, {en:'to improve', target:'verbessern'},
+      {en:'relationship', target:'beziehung'}, {en:'decision', target:'entscheidung'}
+    ],
+    advanced: [
+      {en:'ambiguous', target:'mehrdeutig'}, {en:'to undermine', target:'untergraben'}, {en:'resilience', target:'resilienz'},
+      {en:'consequently', target:'folglich'}, {en:'to strive', target:'sich bemuhen', alts:['sich bemühen']},
+      {en:'outcome', target:'ergebnis'}, {en:'widespread', target:'weit verbreitet'}, {en:'to acknowledge', target:'anerkennen'}
+    ]
+  }},
+  it: { name: 'Italian', code: 'it-IT', flag: '🇮🇹', wordBank: {
+    beginner: [
+      {en:'house', target:'casa'}, {en:'cat', target:'gatto'}, {en:'dog', target:'cane'},
+      {en:'water', target:'acqua'}, {en:'to eat', target:'mangiare'}, {en:'friend', target:'amico', alts:['amica']},
+      {en:'book', target:'libro'}, {en:'good morning', target:'buongiorno'}
+    ],
+    intermediate: [
+      {en:'although', target:'sebbene'}, {en:'however', target:'tuttavia'}, {en:'to achieve', target:'raggiungere'},
+      {en:'environment', target:'ambiente'}, {en:'opportunity', target:'opportunita', alts:['opportunità']},
+      {en:'to improve', target:'migliorare'}, {en:'relationship', target:'relazione'}, {en:'decision', target:'decisione'}
+    ],
+    advanced: [
+      {en:'ambiguous', target:'ambiguo'}, {en:'to undermine', target:'minare'}, {en:'resilience', target:'resilienza'},
+      {en:'consequently', target:'di conseguenza'}, {en:'to strive', target:'sforzarsi'}, {en:'outcome', target:'risultato'},
+      {en:'widespread', target:'diffuso'}, {en:'to acknowledge', target:'riconoscere'}
+    ]
+  }},
+  pt: { name: 'Portuguese', code: 'pt-BR', flag: '🇵🇹', wordBank: {
+    beginner: [
+      {en:'house', target:'casa'}, {en:'cat', target:'gato'}, {en:'dog', target:'cachorro'},
+      {en:'water', target:'agua', alts:['água']}, {en:'to eat', target:'comer'}, {en:'friend', target:'amigo', alts:['amiga']},
+      {en:'book', target:'livro'}, {en:'good morning', target:'bom dia'}
+    ],
+    intermediate: [
+      {en:'although', target:'embora'}, {en:'however', target:'no entanto'}, {en:'to achieve', target:'alcancar', alts:['alcançar']},
+      {en:'environment', target:'ambiente'}, {en:'opportunity', target:'oportunidade'}, {en:'to improve', target:'melhorar'},
+      {en:'relationship', target:'relacionamento'}, {en:'decision', target:'decisao', alts:['decisão']}
+    ],
+    advanced: [
+      {en:'ambiguous', target:'ambiguo', alts:['ambíguo']}, {en:'to undermine', target:'minar'},
+      {en:'resilience', target:'resiliencia', alts:['resiliência']}, {en:'consequently', target:'consequentemente'},
+      {en:'to strive', target:'esforcar-se', alts:['esforçar-se']}, {en:'outcome', target:'resultado'},
+      {en:'widespread', target:'generalizado'}, {en:'to acknowledge', target:'reconhecer'}
+    ]
+  }}
+};
+const LEVEL_ORDER = ['beginner','intermediate','advanced'];
+const STORAGE_KEY = 'lingoPassportV1';
+
+/* ---------- state ---------- */
+function loadPersisted(){
+  const defaults = {
+    credits:0, streak:0, lastActiveDate:null, referralCode:null, referralPoints:0, redeemedCodes:[],
+    progress:{}, introducedOrder:[], completedDays:0, recapPending:false
+  };
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return Object.assign(defaults, JSON.parse(raw));
+  }catch(e){}
+  return defaults;
+}
+function savePersisted(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      credits: state.credits, streak: state.streak, lastActiveDate: state.lastActiveDate,
+      referralCode: state.referralCode, referralPoints: state.referralPoints, redeemedCodes: state.redeemedCodes,
+      progress: state.progress, introducedOrder: state.introducedOrder,
+      completedDays: state.completedDays, recapPending: state.recapPending
+    }));
+  }catch(e){}
+}
+let state = Object.assign({ username:null, language:null, selfLevel:null, actualLevel:null }, loadPersisted());
+let currentSession = null;
+
+/* ---------- helpers ---------- */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function seededShuffle(arr, seedStr){
+  let seed = 0;
+  for(let i=0;i<seedStr.length;i++){ seed = (seed*31 + seedStr.charCodeAt(i)) >>> 0; }
+  const rnd = () => { seed = (seed*1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j = Math.floor(rnd()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function normalize(s){
+  return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z ]/g,'').trim();
+}
+function isCorrect(answer, word){
+  const a = normalize(answer);
+  if(!a) return false;
+  const targets = [word.target].concat(word.alts||[]).map(normalize);
+  return targets.some(t => a === t || a.includes(t) || t.includes(a));
+}
+function speak(text, lang){
+  return new Promise(resolve=>{
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang;
+      u.onend = resolve; u.onerror = resolve;
+      window.speechSynthesis.speak(u);
+      setTimeout(resolve, 4000);
+    }catch(e){ resolve(); }
+  });
+}
+function ensureRecognition(lang){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!SR) return null;
+  const r = new SR();
+  r.lang = lang; r.interimResults = false; r.maxAlternatives = 1;
+  return r;
+}
+function startListening(lang){
+  const r = ensureRecognition(lang);
+  const micBtn = document.getElementById('micBtn');
+  const inputEl = document.getElementById('answerInput');
+  if(!r){
+    alert("Voice input isn't available in this browser (try Chrome on desktop or Android). Please type your answer instead.");
+    return;
+  }
+  micBtn.classList.add('listening');
+  micBtn.textContent = '🎙️ Listening…';
+  r.onresult = (e)=>{ inputEl.value = e.results[0][0].transcript; };
+  const stop = ()=>{ micBtn.classList.remove('listening'); micBtn.textContent = '🎤 Tap to answer'; };
+  r.onerror = stop; r.onend = stop;
+  try{ r.start(); }catch(e){ stop(); }
+}
+
+/* ---------- theme ---------- */
+const THEME_KEY = 'lingoPassportTheme';
+function loadTheme(){
+  try{
+    const saved = localStorage.getItem(THEME_KEY);
+    if(saved === 'light' || saved === 'dark') return saved;
+  }catch(e){}
+  try{
+    if(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+  }catch(e){}
+  return 'light';
+}
+function applyTheme(theme){
+  document.documentElement.setAttribute('data-theme', theme);
+  const btn = document.getElementById('themeToggleBtn');
+  btn.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+  try{ localStorage.setItem(THEME_KEY, theme); }catch(e){}
+}
+function toggleTheme(){
+  const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  applyTheme(current === 'dark' ? 'light' : 'dark');
+}
+applyTheme(loadTheme());
+
+/* ---------- screen control ---------- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  const onboarding = ['screen-login','screen-language','screen-self-level','screen-assessment-intro','screen-assessment','screen-results'];
+  document.getElementById('wordmark').style.display = onboarding.includes(id) ? 'flex' : 'none';
+  document.getElementById('topbar').classList.toggle('show', !onboarding.includes(id));
+  if(!onboarding.includes(id)) updateHeaderStats();
+  window.scrollTo(0,0);
+}
+function updateHeaderStats(){
+  document.getElementById('statStreak').textContent = '🔥 ' + state.streak;
+  document.getElementById('statCoins').textContent = '🪙 ' + state.credits;
+}
+
+/* ---------- login (simulated email OTP as 2FA) ---------- */
+let pendingOtp = null;
+let pendingEmail = '';
+function sendOtp(isResend){
+  const emailField = document.getElementById('loginEmail').value.trim();
+  if(!isResend){
+    const u = document.getElementById('loginUser').value.trim();
+    state.username = u || 'Learner';
+    if(!emailField){
+      alert('Enter an email address to receive the code (any value works in this prototype).');
+      return;
+    }
+    pendingEmail = emailField;
+  }
+  pendingOtp = String(Math.floor(100000 + Math.random()*900000));
+  document.getElementById('loginStep1').style.display = 'none';
+  document.getElementById('loginStep2').style.display = 'block';
+  document.getElementById('otpError').textContent = '';
+  const otpInput = document.getElementById('otpInput');
+  otpInput.value = '';
+  document.getElementById('otpBanner').innerHTML =
+    'This prototype has no mail server, so nothing is actually emailed. In a real build this code would land in ' +
+    '<strong>' + escapeHtml(pendingEmail) + '</strong>:' +
+    '<span class="otp-code">' + pendingOtp + '</span>';
+  otpInput.focus();
+}
+function verifyOtp(){
+  const val = document.getElementById('otpInput').value.trim();
+  const err = document.getElementById('otpError');
+  if(!val){ err.textContent = 'Enter the code shown above.'; return; }
+  if(val !== pendingOtp){ err.textContent = "That code doesn't match — check the banner above, or resend."; return; }
+  err.textContent = '';
+  buildLanguageGrid();
+  showScreen('screen-language');
+}
+function handleLogout(){
+  document.getElementById('loginStep1').style.display = 'block';
+  document.getElementById('loginStep2').style.display = 'none';
+  document.getElementById('otpInput').value = '';
+  document.getElementById('otpError').textContent = '';
+  pendingOtp = null;
+  showScreen('screen-login');
+}
+
+/* ---------- language ---------- */
+function buildLanguageGrid(){
+  const grid = document.getElementById('langGrid');
+  grid.innerHTML = Object.keys(LANGS).map(key=>{
+    const l = LANGS[key];
+    return `<button class="lang-card" onclick="selectLanguage('${key}')">
+      <span class="flag">${l.flag}</span>
+      <span class="name">${escapeHtml(l.name)}</span>
+    </button>`;
+  }).join('');
+}
+function selectLanguage(key){
+  state.language = key;
+  document.getElementById('selfLevelSubtitle').textContent =
+    `For ${LANGS[key].name}: be honest — we'll check it with a quick voice round next.`;
+  showScreen('screen-self-level');
+}
+
+/* ---------- self level ---------- */
+function selectSelfLevel(level){
+  state.selfLevel = level;
+  showScreen('screen-assessment-intro');
+}
+
+/* ---------- assessment ---------- */
+function beginAssessment(){
+  const pool = LANGS[state.language].wordBank;
+  const picks = []
+    .concat(shuffle(pool.beginner).slice(0,2).map(w=>Object.assign({level:'beginner'}, w)))
+    .concat(shuffle(pool.intermediate).slice(0,2).map(w=>Object.assign({level:'intermediate'}, w)))
+    .concat(shuffle(pool.advanced).slice(0,2).map(w=>Object.assign({level:'advanced'}, w)));
+  currentSession = { mode:'assessment', questions: shuffle(picks), idx:0, tally:{beginner:0,intermediate:0,advanced:0} };
+  showScreen('screen-assessment');
+  renderQuizQuestion();
+}
+
+/* ---------- spaced repetition ---------- */
+function wordKey(language, w){ return language + '|' + w.target; }
+function buildWordIndex(language){
+  const pool = LANGS[language].wordBank;
+  const idx = {};
+  LEVEL_ORDER.forEach(lvl=>{
+    pool[lvl].forEach(w=>{ idx[wordKey(language, w)] = Object.assign({level: lvl}, w); });
+  });
+  return idx;
+}
+function countDueReviews(){
+  if(!state.language) return 0;
+  const today = todayStr();
+  const prefix = state.language + '|';
+  return Object.keys(state.progress).filter(k => k.startsWith(prefix) && state.progress[k].nextDue <= today).length;
+}
+function pickDailyChallengeWords(){
+  const language = state.language;
+  const level = state.actualLevel || state.selfLevel || 'beginner';
+  const idx = buildWordIndex(language);
+  const today = todayStr();
+  const prefix = language + '|';
+  const due = Object.keys(state.progress)
+    .filter(k => k.startsWith(prefix) && state.progress[k].nextDue <= today)
+    .sort((a,b)=> state.progress[a].nextDue.localeCompare(state.progress[b].nextDue))
+    .map(k => idx[k]).filter(Boolean);
+
+  const chosen = [];
+  const used = new Set();
+  due.slice(0,5).forEach(w=>{ chosen.push(Object.assign({tag:'review'}, w)); used.add(wordKey(language,w)); });
+
+  if(chosen.length < 5){
+    const seed = today + language + level;
+    const candidates = seededShuffle(LANGS[language].wordBank[level], seed).filter(w=> !used.has(wordKey(language,w)));
+    for(const w of candidates){
+      if(chosen.length >= 5) break;
+      const key = wordKey(language, w);
+      chosen.push(Object.assign({tag: state.progress[key] ? 'review' : 'new'}, w));
+      used.add(key);
+    }
+  }
+  return chosen.slice(0,5);
+}
+function getRecapWords(){
+  const language = state.language;
+  const idx = buildWordIndex(language);
+  const keys = state.introducedOrder.filter(k => k.startsWith(language + '|')).slice(-7);
+  return keys.map(k => Object.assign({tag:'recap'}, idx[k])).filter(w => w.target);
+}
+function updateWordProgress(word, correct){
+  const key = wordKey(state.language, word);
+  const today = todayStr();
+  const intervals = [1,3,7,16,30];
+  let entry = state.progress[key];
+  if(!entry){
+    entry = { box:0, nextDue: today };
+    state.progress[key] = entry;
+    state.introducedOrder.push(key);
+  }
+  entry.box = correct ? Math.min(entry.box + 1, intervals.length - 1) : 0;
+  const due = new Date();
+  due.setDate(due.getDate() + intervals[entry.box]);
+  entry.nextDue = due.toISOString().slice(0,10);
+  entry.lastSeen = today;
+  savePersisted();
+}
+function tagLabel(tag){
+  return tag === 'review' ? 'Review' : tag === 'recap' ? 'Weekly recap' : tag === 'new' ? 'New word' : '';
+}
+
+/* ---------- daily challenge ---------- */
+function handleChallengeClick(){
+  const practice = state.lastActiveDate === todayStr();
+  beginChallenge(practice);
+}
+function beginChallenge(practice){
+  let isRecap = false;
+  let picks = [];
+  if(!practice && state.recapPending){
+    picks = getRecapWords();
+    isRecap = picks.length > 0;
+  }
+  if(picks.length === 0){
+    picks = pickDailyChallengeWords();
+  }
+  currentSession = { mode:'challenge', questions: picks, idx:0, correctCount:0, practice: !!practice, isRecap };
+  showScreen('screen-challenge');
+  if(isRecap){ speak("Let's review this week's seven words.", 'en-US'); }
+  renderQuizQuestion();
+}
+
+/* ---------- shared quiz engine ---------- */
+function renderQuizQuestion(){
+  const s = currentSession;
+  const containerId = s.mode === 'assessment' ? 'assessmentBody' : 'challengeBody';
+  const container = document.getElementById(containerId);
+  if(s.idx >= s.questions.length){ finishSession(); return; }
+  const q = s.questions[s.idx];
+  const langCode = LANGS[state.language].code;
+  const tag = q.tag ? `<span class="quiz-tag">${tagLabel(q.tag)}</span>` : '';
+  container.innerHTML = `
+    <div class="quiz-progress">Question ${s.idx+1} of ${s.questions.length}${tag}</div>
+    <div class="quiz-word">${escapeHtml(q.en)}</div>
+    <p class="quiz-hint">Say or type this word in ${escapeHtml(LANGS[state.language].name)}.</p>
+    <div class="quiz-controls">
+      <button class="btn-icon" type="button" onclick="speak('${q.en.replace(/'/g,"\\'")}','en-US')">🔊 Hear the word</button>
+      <button class="btn-icon" type="button" id="micBtn" onclick="startListening('${langCode}')">🎤 Tap to answer</button>
+    </div>
+    <label for="answerInput">Your answer</label>
+    <input type="text" id="answerInput" placeholder="Type or dictate here" autocomplete="off">
+    <button class="btn-primary" type="button" onclick="submitAnswer()">Submit answer</button>
+    <div id="quizFeedback" class="quiz-feedback" aria-live="polite"></div>
+  `;
+  document.getElementById('answerInput').focus();
+  document.getElementById('answerInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitAnswer(); });
+}
+function submitAnswer(){
+  const s = currentSession;
+  const q = s.questions[s.idx];
+  const val = document.getElementById('answerInput').value;
+  const correct = isCorrect(val, q);
+  if(correct){
+    if(s.mode === 'assessment') s.tally[q.level]++;
+    else s.correctCount++;
+  }
+  if(s.mode === 'challenge' && !s.practice){
+    updateWordProgress(q, correct);
+  }
+  const fb = document.getElementById('quizFeedback');
+  fb.textContent = correct ? "Nice — that's right!" : `Not quite — it's "${q.target}".`;
+  fb.className = 'quiz-feedback ' + (correct ? 'is-correct' : 'is-wrong');
+  document.querySelectorAll('#answerInput, .btn-primary, .btn-icon').forEach(el=> el.disabled = true);
+  speak(correct ? 'Correct' : q.target, correct ? 'en-US' : LANGS[state.language].code);
+  setTimeout(()=>{ s.idx++; renderQuizQuestion(); }, 1300);
+}
+function finishSession(){
+  const s = currentSession;
+  if(s.mode === 'assessment'){
+    const t = s.tally;
+    let actual = 'beginner';
+    if(t.advanced >= 1) actual = 'advanced';
+    else if(t.intermediate >= 1) actual = 'intermediate';
+    state.actualLevel = actual;
+    renderResults();
+    showScreen('screen-results');
+  } else {
+    let awarded = false;
+    if(!s.practice){ awarded = updateStreakAndCredits(s.correctCount); }
+    if(s.isRecap){ state.recapPending = false; savePersisted(); }
+    renderChallengeResults(s, awarded);
+    showScreen('screen-challenge-results');
+  }
+}
+
+/* ---------- results ---------- */
+function levelLabel(l){ return l.charAt(0).toUpperCase() + l.slice(1); }
+function renderResults(){
+  const selfIdx = LEVEL_ORDER.indexOf(state.selfLevel);
+  const actualIdx = LEVEL_ORDER.indexOf(state.actualLevel);
+  let msg;
+  if(actualIdx === selfIdx) msg = "Your instincts were spot on. We'll start you right there.";
+  else if(actualIdx > selfIdx) msg = "You're a bit stronger than you gave yourself credit for.";
+  else msg = "We'll spend a little more time on the basics before moving up.";
+  document.getElementById('resultsSubtitle').textContent = msg;
+  document.getElementById('resultsSelf').innerHTML = `<span class="badge ${state.selfLevel}">${levelLabel(state.selfLevel)}</span>`;
+  document.getElementById('resultsActual').innerHTML = `<span class="badge ${state.actualLevel}">${levelLabel(state.actualLevel)}</span>`;
+}
+function enterDashboard(){
+  ensureReferralCode();
+  renderDashboard();
+  showScreen('screen-dashboard');
+}
+
+/* ---------- dashboard ---------- */
+function ensureReferralCode(){
+  if(!state.referralCode){
+    const base = (state.username||'user').replace(/[^a-zA-Z]/g,'').slice(0,4).toUpperCase() || 'LNGO';
+    const rand = Math.random().toString(36).slice(2,6).toUpperCase();
+    state.referralCode = base + '-' + rand;
+    savePersisted();
+  }
+}
+function renderDashboard(){
+  const lang = LANGS[state.language];
+  document.getElementById('dashSubtitle').textContent = `Welcome back, ${state.username}.`;
+  document.getElementById('dashLang').textContent = lang.flag + ' ' + lang.name;
+  document.getElementById('dashLevel').innerHTML = `<span class="badge ${state.actualLevel}">${levelLabel(state.actualLevel)}</span>`;
+  document.getElementById('dashStreak').textContent = '🔥 ' + state.streak + (state.streak===1 ? ' day' : ' days');
+  document.getElementById('dashCoins').textContent = '🪙 ' + state.credits;
+  document.getElementById('dashReferralPoints').textContent = state.referralPoints;
+  document.getElementById('myReferralCode').value = state.referralCode;
+
+  const doneToday = state.lastActiveDate === todayStr();
+  const btn = document.getElementById('challengeBtn');
+  if(doneToday){
+    btn.textContent = "Practice again (today's reward already claimed)";
+  } else if(state.recapPending){
+    btn.textContent = "Start this week's recap";
+  } else {
+    btn.textContent = "Start today's challenge";
+  }
+  const dueCount = countDueReviews();
+  document.getElementById('dashReviewRow').style.display = dueCount > 0 ? 'flex' : 'none';
+  document.getElementById('dashReviewCount').textContent = dueCount;
+  updateHeaderStats();
+}
+function copyReferralCode(){
+  const val = state.referralCode;
+  try{
+    navigator.clipboard.writeText(val);
+    alert('Copied: ' + val);
+  }catch(e){
+    alert('Your code: ' + val);
+  }
+}
+function redeemReferral(){
+  const raw = document.getElementById('referralInput').value.trim().toUpperCase();
+  if(!raw) return;
+  if(raw === state.referralCode){ alert("You can't redeem your own code."); return; }
+  if(state.redeemedCodes.includes(raw)){ alert('That code has already been used.'); return; }
+  state.redeemedCodes.push(raw);
+  state.referralPoints += 50;
+  state.credits += 50;
+  savePersisted();
+  document.getElementById('referralInput').value = '';
+  renderDashboard();
+}
+
+/* ---------- streak / credits ---------- */
+function updateStreakAndCredits(correctCount){
+  const today = todayStr();
+  if(state.lastActiveDate === today) return false;
+  if(state.lastActiveDate){
+    const prev = new Date(state.lastActiveDate);
+    const diffDays = Math.round((new Date(today) - prev) / 86400000);
+    state.streak = diffDays === 1 ? state.streak + 1 : 1;
+  } else {
+    state.streak = 1;
+  }
+  state.lastActiveDate = today;
+  state.credits += correctCount * 10;
+  state.completedDays = (state.completedDays || 0) + 1;
+  if(state.completedDays % 7 === 0){ state.recapPending = true; }
+  savePersisted();
+  return true;
+}
+function renderChallengeResults(s, awarded){
+  document.getElementById('chResultsTitle').textContent = s.isRecap ? "Weekly recap complete" : (awarded ? "Today's challenge complete" : "Practice round complete");
+  document.getElementById('chResultsSubtitle').textContent = awarded
+    ? "Your streak and coins are updated for today."
+    : "You already claimed today's reward — this round was just for practice.";
+  document.getElementById('chScore').textContent = s.correctCount + ' / ' + s.questions.length;
+  document.getElementById('chCoins').textContent = awarded ? ('🪙 +' + (s.correctCount*10)) : '🪙 +0';
+  document.getElementById('chStreak').textContent = '🔥 ' + state.streak;
+}
+function backToDashboard(){
+  renderDashboard();
+  showScreen('screen-dashboard');
+}
+</script>
+</body>
+</html>
