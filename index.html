@@ -576,9 +576,10 @@ function ensureRecognition(lang){
 }
 function startListening(lang){
   const r = ensureRecognition(lang);
-  const micBtn = document.getElementById('micBtn');
-  const inputEl = document.getElementById('answerInput');
-  const status = document.getElementById('micStatus');
+  const container = activeQuizContainer();
+  const micBtn = container.querySelector('#micBtn');
+  const inputEl = container.querySelector('#answerInput');
+  const status = container.querySelector('#micStatus');
   if(!r){
     alert("Voice input isn't available in this browser (try Chrome on desktop or Android). Please type your answer instead.");
     return;
@@ -821,10 +822,13 @@ function beginChallenge(practice){
 }
 
 /* ---------- shared quiz engine ---------- */
+function activeQuizContainer(){
+  if(!currentSession) return null;
+  return document.getElementById(currentSession.mode === 'assessment' ? 'assessmentBody' : 'challengeBody');
+}
 function renderQuizQuestion(){
   const s = currentSession;
-  const containerId = s.mode === 'assessment' ? 'assessmentBody' : 'challengeBody';
-  const container = document.getElementById(containerId);
+  const container = activeQuizContainer();
   if(s.idx >= s.questions.length){ finishSession(); return; }
   const q = s.questions[s.idx];
   const langCode = LANGS[state.language].code;
@@ -843,13 +847,15 @@ function renderQuizQuestion(){
     <button class="btn-primary" type="button" onclick="submitAnswer()">Submit answer</button>
     <div id="quizFeedback" class="quiz-feedback" aria-live="polite"></div>
   `;
-  document.getElementById('answerInput').focus();
-  document.getElementById('answerInput').addEventListener('keydown', e=>{ if(e.key==='Enter') submitAnswer(); });
+  const input = container.querySelector('#answerInput');
+  input.focus();
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') submitAnswer(); });
 }
 function submitAnswer(){
   const s = currentSession;
+  const container = activeQuizContainer();
   const q = s.questions[s.idx];
-  const val = document.getElementById('answerInput').value;
+  const val = container.querySelector('#answerInput').value;
   const correct = isCorrect(val, q);
   if(correct){
     if(s.mode === 'assessment') s.tally[q.level]++;
@@ -858,11 +864,10 @@ function submitAnswer(){
   if(s.mode === 'challenge' && !s.practice){
     updateWordProgress(q, correct);
   }
-  const fb = document.getElementById('quizFeedback');
+  const fb = container.querySelector('#quizFeedback');
   fb.textContent = correct ? "Nice — that's right!" : `Not quite — it's "${q.target}".`;
   fb.className = 'quiz-feedback ' + (correct ? 'is-correct' : 'is-wrong');
-  const containerId = s.mode === 'assessment' ? 'assessmentBody' : 'challengeBody';
-  document.getElementById(containerId).querySelectorAll('#answerInput, .btn-primary, .btn-icon').forEach(el=> el.disabled = true);
+  container.querySelectorAll('#answerInput, .btn-primary, .btn-icon').forEach(el=> el.disabled = true);
   speak(correct ? 'Correct' : q.target, correct ? 'en-US' : LANGS[state.language].code);
   setTimeout(()=>{ s.idx++; renderQuizQuestion(); }, 1300);
 }
