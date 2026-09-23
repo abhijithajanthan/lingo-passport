@@ -839,7 +839,8 @@ function submitAnswer(){
   const fb = document.getElementById('quizFeedback');
   fb.textContent = correct ? "Nice — that's right!" : `Not quite — it's "${q.target}".`;
   fb.className = 'quiz-feedback ' + (correct ? 'is-correct' : 'is-wrong');
-  document.querySelectorAll('#answerInput, .btn-primary, .btn-icon').forEach(el=> el.disabled = true);
+  const containerId = s.mode === 'assessment' ? 'assessmentBody' : 'challengeBody';
+  document.getElementById(containerId).querySelectorAll('#answerInput, .btn-primary, .btn-icon').forEach(el=> el.disabled = true);
   speak(correct ? 'Correct' : q.target, correct ? 'en-US' : LANGS[state.language].code);
   setTimeout(()=>{ s.idx++; renderQuizQuestion(); }, 1300);
 }
