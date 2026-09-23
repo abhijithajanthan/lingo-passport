@@ -234,6 +234,7 @@
     letter-spacing:5px; color: var(--primary-dark); margin-top:6px;
   }
   .quiz-tag{ font-size:12px; color: var(--ink-soft); margin-left:8px; font-weight:500; }
+  .mic-status{ font-size:13px; color: var(--ink-soft); min-height:16px; margin: -6px 0 14px; }
 </style>
 </head>
 <body>
@@ -577,16 +578,36 @@ function startListening(lang){
   const r = ensureRecognition(lang);
   const micBtn = document.getElementById('micBtn');
   const inputEl = document.getElementById('answerInput');
+  const status = document.getElementById('micStatus');
   if(!r){
     alert("Voice input isn't available in this browser (try Chrome on desktop or Android). Please type your answer instead.");
     return;
   }
   micBtn.classList.add('listening');
   micBtn.textContent = '🎙️ Listening…';
-  r.onresult = (e)=>{ inputEl.value = e.results[0][0].transcript; };
+  if(status) status.textContent = 'Listening — speak now.';
+  r.onresult = (e)=>{
+    const heard = e.results[0][0].transcript;
+    inputEl.value = heard;
+    if(status) status.textContent = 'Heard: "' + heard + '"';
+  };
   const stop = ()=>{ micBtn.classList.remove('listening'); micBtn.textContent = '🎤 Tap to answer'; };
-  r.onerror = stop; r.onend = stop;
-  try{ r.start(); }catch(e){ stop(); }
+  r.onerror = (e)=>{
+    stop();
+    if(status){
+      const reasons = {
+        'no-speech': "Didn't hear anything — tap and speak right away.",
+        'audio-capture': 'No microphone found — check your device.',
+        'not-allowed': 'Microphone permission is blocked for this site.',
+        'network': 'Voice recognition needs an internet connection.',
+        'aborted': 'Listening was stopped.',
+        'language-not-supported': 'This browser doesn\'t support that language for voice input.'
+      };
+      status.textContent = reasons[e.error] || ('Voice input error: ' + e.error + ' — try again or type it.');
+    }
+  };
+  r.onend = stop;
+  try{ r.start(); }catch(e){ stop(); if(status) status.textContent = 'Could not start listening — try again.'; }
 }
 
 /* ---------- theme ---------- */
@@ -816,6 +837,7 @@ function renderQuizQuestion(){
       <button class="btn-icon" type="button" onclick="speak('${q.en.replace(/'/g,"\\'")}','en-US')">🔊 Hear the word</button>
       <button class="btn-icon" type="button" id="micBtn" onclick="startListening('${langCode}')">🎤 Tap to answer</button>
     </div>
+    <p id="micStatus" class="mic-status"></p>
     <label for="answerInput">Your answer</label>
     <input type="text" id="answerInput" placeholder="Type or dictate here" autocomplete="off">
     <button class="btn-primary" type="button" onclick="submitAnswer()">Submit answer</button>
