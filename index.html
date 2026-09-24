@@ -84,6 +84,8 @@
     background: var(--paper); border:1px solid var(--line); border-radius:999px;
     padding:6px 12px; font-size:14px; font-weight:600; margin-left:8px;
   }
+  .stat-pill .stat-icon{ color: var(--ink-soft); flex-shrink:0; }
+  .stat-icon{ vertical-align:-2px; margin-right:4px; }
   .stats{ display:flex; }
 
   .card{
@@ -249,8 +251,8 @@
   <div class="topbar" id="topbar">
     <div class="brand">Lingo Passport</div>
     <div class="topbar-actions">
-      <span class="stat-pill" id="statStreak">🔥 0</span>
-      <span class="stat-pill" id="statCoins">🪙 0</span>
+      <span class="stat-pill" id="statStreak"></span>
+      <span class="stat-pill" id="statCoins"></span>
       <button type="button" class="logout-link" onclick="handleLogout()">Log out</button>
     </div>
   </div>
@@ -503,6 +505,10 @@ const LANGS = {
 const LEVEL_ORDER = ['beginner','intermediate','advanced'];
 const STORAGE_KEY = 'lingoPassportV1';
 
+const ICON_STREAK = '<svg class="stat-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c3.3 0 6-2.3 6-5.7 0-2.6-1.7-4.4-2.7-6.1.1 1.7-.8 2.7-1.7 2.7-.9-1.7 0-3.6-.9-6.2C10.8 8.5 9 11 9 13.9c0 .5.1.9.2 1.4"/><path d="M9.2 15.3A2.9 2.9 0 0 0 12 18.1c1.6 0 2.9-1.1 2.9-2.7 0-1-.5-1.7-1-2.4"/></svg>';
+const ICON_COIN = '<svg class="stat-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>';
+function statMarkup(icon, text){ return icon + '<span>' + text + '</span>'; }
+
 /* ---------- state ---------- */
 function loadPersisted(){
   const defaults = {
@@ -646,8 +652,8 @@ function showScreen(id){
   window.scrollTo(0,0);
 }
 function updateHeaderStats(){
-  document.getElementById('statStreak').textContent = '🔥 ' + state.streak;
-  document.getElementById('statCoins').textContent = '🪙 ' + state.credits;
+  document.getElementById('statStreak').innerHTML = statMarkup(ICON_STREAK, state.streak);
+  document.getElementById('statCoins').innerHTML = statMarkup(ICON_COIN, state.credits);
 }
 
 /* ---------- login (simulated email OTP as 2FA) ---------- */
@@ -923,8 +929,8 @@ function renderDashboard(){
   document.getElementById('dashSubtitle').textContent = `Welcome back, ${state.username}.`;
   document.getElementById('dashLang').textContent = lang.flag + ' ' + lang.name;
   document.getElementById('dashLevel').innerHTML = `<span class="badge ${state.actualLevel}">${levelLabel(state.actualLevel)}</span>`;
-  document.getElementById('dashStreak').textContent = '🔥 ' + state.streak + (state.streak===1 ? ' day' : ' days');
-  document.getElementById('dashCoins').textContent = '🪙 ' + state.credits;
+  document.getElementById('dashStreak').innerHTML = statMarkup(ICON_STREAK, state.streak + (state.streak===1 ? ' day' : ' days'));
+  document.getElementById('dashCoins').innerHTML = statMarkup(ICON_COIN, state.credits);
   document.getElementById('dashReferralPoints').textContent = state.referralPoints;
   document.getElementById('myReferralCode').value = state.referralCode;
 
@@ -988,8 +994,8 @@ function renderChallengeResults(s, awarded){
     ? "Your streak and coins are updated for today."
     : "You already claimed today's reward — this round was just for practice.";
   document.getElementById('chScore').textContent = s.correctCount + ' / ' + s.questions.length;
-  document.getElementById('chCoins').textContent = awarded ? ('🪙 +' + (s.correctCount*10)) : '🪙 +0';
-  document.getElementById('chStreak').textContent = '🔥 ' + state.streak;
+  document.getElementById('chCoins').innerHTML = statMarkup(ICON_COIN, awarded ? ('+' + (s.correctCount*10)) : '+0');
+  document.getElementById('chStreak').innerHTML = statMarkup(ICON_STREAK, state.streak);
 }
 function backToDashboard(){
   renderDashboard();
