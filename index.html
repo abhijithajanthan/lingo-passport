@@ -237,6 +237,22 @@
   }
   .quiz-tag{ font-size:12px; color: var(--ink-soft); margin-left:8px; font-weight:500; }
   .mic-status{ font-size:13px; color: var(--ink-soft); min-height:16px; margin: -6px 0 14px; }
+
+  .lesson-example{
+    background: var(--primary-tint); border-radius:12px; padding:14px 16px;
+    font-family: var(--serif); font-size:17px; line-height:1.5; color: var(--ink); margin: 4px 0 18px;
+  }
+  .lesson-example-en{ display:block; font-family: var(--sans); font-size:13px; font-weight:500; color: var(--ink-soft); margin-top:6px; }
+
+  .companion{
+    display:flex; align-items:center; gap:10px;
+    background: var(--gold-tint); border-radius:12px; padding:10px 12px;
+    font-size:13px; color: var(--ink); margin: 14px 0; line-height:1.4;
+  }
+  .companion-avatar{
+    width:24px; height:24px; border-radius:50%; background: var(--paper);
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; color: var(--primary);
+  }
 </style>
 </head>
 <body>
@@ -368,6 +384,8 @@
         <div class="passport-row" id="dashReviewRow" style="display:none;"><span class="k">Words due for review</span><span class="v" id="dashReviewCount"></span></div>
       </div>
 
+      <div id="dashCompanion"></div>
+
       <button class="btn-primary" id="challengeBtn" onclick="handleChallengeClick()">Start today's challenge</button>
 
       <div class="section-label">Invite a fellow traveler</div>
@@ -384,6 +402,13 @@
 
       <button class="btn-ghost" onclick="handleLogout()">Log out</button>
       <p class="fine">Prototype note: progress is saved to this browser only (no account backend), and voice recognition needs Chrome with mic access — a text box is always available as a backup.</p>
+    </div>
+  </section>
+
+  <!-- LESSON (teaching new words before the challenge) -->
+  <section class="screen" id="screen-lesson">
+    <div class="card">
+      <div id="lessonBody"></div>
     </div>
   </section>
 
@@ -404,6 +429,7 @@
         <div class="passport-row"><span class="k">Coins earned</span><span class="v" id="chCoins"></span></div>
         <div class="passport-row"><span class="k">Streak</span><span class="v" id="chStreak"></span></div>
       </div>
+      <div id="chCompanion"></div>
       <button class="btn-primary" onclick="backToDashboard()">Back to passport</button>
     </div>
   </section>
@@ -415,9 +441,14 @@
 const LANGS = {
   es: { name: 'Spanish', code: 'es-ES', flag: '🇪🇸', wordBank: {
     beginner: [
-      {en:'house', target:'casa'}, {en:'cat', target:'gato'}, {en:'dog', target:'perro'},
-      {en:'water', target:'agua'}, {en:'to eat', target:'comer'}, {en:'friend', target:'amigo', alts:['amiga']},
-      {en:'book', target:'libro'}, {en:'good morning', target:'buenos dias', alts:['buenos días']}
+      {en:'house', target:'casa', example:'Mi casa es grande.', exampleEn:'My house is big.'},
+      {en:'cat', target:'gato', example:'El gato duerme mucho.', exampleEn:'The cat sleeps a lot.'},
+      {en:'dog', target:'perro', example:'El perro corre rápido.', exampleEn:'The dog runs fast.'},
+      {en:'water', target:'agua', example:'Bebo agua todos los días.', exampleEn:'I drink water every day.'},
+      {en:'to eat', target:'comer', example:'Me gusta comer fruta.', exampleEn:'I like to eat fruit.'},
+      {en:'friend', target:'amigo', alts:['amiga'], example:'Mi amigo es muy amable.', exampleEn:'My friend is very kind.'},
+      {en:'book', target:'libro', example:'Este libro es interesante.', exampleEn:'This book is interesting.'},
+      {en:'good morning', target:'buenos dias', alts:['buenos días'], example:'¡Buenos días! ¿Cómo estás?', exampleEn:'Good morning! How are you?'}
     ],
     intermediate: [
       {en:'although', target:'aunque'}, {en:'however', target:'sin embargo'}, {en:'to achieve', target:'lograr'},
@@ -432,9 +463,14 @@ const LANGS = {
   }},
   fr: { name: 'French', code: 'fr-FR', flag: '🇫🇷', wordBank: {
     beginner: [
-      {en:'house', target:'maison'}, {en:'cat', target:'chat'}, {en:'dog', target:'chien'},
-      {en:'water', target:'eau'}, {en:'to eat', target:'manger'}, {en:'friend', target:'ami', alts:['amie']},
-      {en:'book', target:'livre'}, {en:'good morning', target:'bonjour'}
+      {en:'house', target:'maison', example:'Ma maison est grande.', exampleEn:'My house is big.'},
+      {en:'cat', target:'chat', example:'Le chat dort beaucoup.', exampleEn:'The cat sleeps a lot.'},
+      {en:'dog', target:'chien', example:'Le chien court vite.', exampleEn:'The dog runs fast.'},
+      {en:'water', target:'eau', example:"Je bois de l'eau tous les jours.", exampleEn:'I drink water every day.'},
+      {en:'to eat', target:'manger', example:'J\'aime manger des fruits.', exampleEn:'I like to eat fruit.'},
+      {en:'friend', target:'ami', alts:['amie'], example:'Mon ami est très gentil.', exampleEn:'My friend is very kind.'},
+      {en:'book', target:'livre', example:'Ce livre est intéressant.', exampleEn:'This book is interesting.'},
+      {en:'good morning', target:'bonjour', example:'Bonjour ! Comment ça va ?', exampleEn:'Good morning! How are you?'}
     ],
     intermediate: [
       {en:'although', target:'bien que'}, {en:'however', target:'cependant'}, {en:'to achieve', target:'atteindre'},
@@ -451,9 +487,14 @@ const LANGS = {
   }},
   de: { name: 'German', code: 'de-DE', flag: '🇩🇪', wordBank: {
     beginner: [
-      {en:'house', target:'haus'}, {en:'cat', target:'katze'}, {en:'dog', target:'hund'},
-      {en:'water', target:'wasser'}, {en:'to eat', target:'essen'}, {en:'friend', target:'freund', alts:['freundin']},
-      {en:'book', target:'buch'}, {en:'good morning', target:'guten morgen'}
+      {en:'house', target:'haus', example:'Mein Haus ist groß.', exampleEn:'My house is big.'},
+      {en:'cat', target:'katze', example:'Die Katze schläft viel.', exampleEn:'The cat sleeps a lot.'},
+      {en:'dog', target:'hund', example:'Der Hund läuft schnell.', exampleEn:'The dog runs fast.'},
+      {en:'water', target:'wasser', example:'Ich trinke jeden Tag Wasser.', exampleEn:'I drink water every day.'},
+      {en:'to eat', target:'essen', example:'Ich esse gern Obst.', exampleEn:'I like to eat fruit.'},
+      {en:'friend', target:'freund', alts:['freundin'], example:'Mein Freund ist sehr nett.', exampleEn:'My friend is very kind.'},
+      {en:'book', target:'buch', example:'Dieses Buch ist interessant.', exampleEn:'This book is interesting.'},
+      {en:'good morning', target:'guten morgen', example:'Guten Morgen! Wie geht es dir?', exampleEn:'Good morning! How are you?'}
     ],
     intermediate: [
       {en:'although', target:'obwohl'}, {en:'however', target:'jedoch'}, {en:'to achieve', target:'erreichen'},
@@ -468,9 +509,14 @@ const LANGS = {
   }},
   it: { name: 'Italian', code: 'it-IT', flag: '🇮🇹', wordBank: {
     beginner: [
-      {en:'house', target:'casa'}, {en:'cat', target:'gatto'}, {en:'dog', target:'cane'},
-      {en:'water', target:'acqua'}, {en:'to eat', target:'mangiare'}, {en:'friend', target:'amico', alts:['amica']},
-      {en:'book', target:'libro'}, {en:'good morning', target:'buongiorno'}
+      {en:'house', target:'casa', example:'La mia casa è grande.', exampleEn:'My house is big.'},
+      {en:'cat', target:'gatto', example:'Il gatto dorme molto.', exampleEn:'The cat sleeps a lot.'},
+      {en:'dog', target:'cane', example:'Il cane corre veloce.', exampleEn:'The dog runs fast.'},
+      {en:'water', target:'acqua', example:'Bevo acqua ogni giorno.', exampleEn:'I drink water every day.'},
+      {en:'to eat', target:'mangiare', example:'Mi piace mangiare la frutta.', exampleEn:'I like to eat fruit.'},
+      {en:'friend', target:'amico', alts:['amica'], example:'Il mio amico è molto gentile.', exampleEn:'My friend is very kind.'},
+      {en:'book', target:'libro', example:'Questo libro è interessante.', exampleEn:'This book is interesting.'},
+      {en:'good morning', target:'buongiorno', example:'Buongiorno! Come stai?', exampleEn:'Good morning! How are you?'}
     ],
     intermediate: [
       {en:'although', target:'sebbene'}, {en:'however', target:'tuttavia'}, {en:'to achieve', target:'raggiungere'},
@@ -485,9 +531,14 @@ const LANGS = {
   }},
   pt: { name: 'Portuguese', code: 'pt-BR', flag: '🇵🇹', wordBank: {
     beginner: [
-      {en:'house', target:'casa'}, {en:'cat', target:'gato'}, {en:'dog', target:'cachorro'},
-      {en:'water', target:'agua', alts:['água']}, {en:'to eat', target:'comer'}, {en:'friend', target:'amigo', alts:['amiga']},
-      {en:'book', target:'livro'}, {en:'good morning', target:'bom dia'}
+      {en:'house', target:'casa', example:'Minha casa é grande.', exampleEn:'My house is big.'},
+      {en:'cat', target:'gato', example:'O gato dorme muito.', exampleEn:'The cat sleeps a lot.'},
+      {en:'dog', target:'cachorro', example:'O cachorro corre rápido.', exampleEn:'The dog runs fast.'},
+      {en:'water', target:'agua', alts:['água'], example:'Eu bebo água todos os dias.', exampleEn:'I drink water every day.'},
+      {en:'to eat', target:'comer', example:'Eu gosto de comer frutas.', exampleEn:'I like to eat fruit.'},
+      {en:'friend', target:'amigo', alts:['amiga'], example:'Meu amigo é muito gentil.', exampleEn:'My friend is very kind.'},
+      {en:'book', target:'livro', example:'Este livro é interessante.', exampleEn:'This book is interesting.'},
+      {en:'good morning', target:'bom dia', example:'Bom dia! Como você está?', exampleEn:'Good morning! How are you?'}
     ],
     intermediate: [
       {en:'although', target:'embora'}, {en:'however', target:'no entanto'}, {en:'to achieve', target:'alcancar', alts:['alcançar']},
@@ -507,7 +558,12 @@ const STORAGE_KEY = 'lingoPassportV1';
 
 const ICON_STREAK = '<svg class="stat-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21c3.3 0 6-2.3 6-5.7 0-2.6-1.7-4.4-2.7-6.1.1 1.7-.8 2.7-1.7 2.7-.9-1.7 0-3.6-.9-6.2C10.8 8.5 9 11 9 13.9c0 .5.1.9.2 1.4"/><path d="M9.2 15.3A2.9 2.9 0 0 0 12 18.1c1.6 0 2.9-1.1 2.9-2.7 0-1-.5-1.7-1-2.4"/></svg>';
 const ICON_COIN = '<svg class="stat-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICON_FACE = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="10" r="1"/><circle cx="15" cy="10" r="1"/><path d="M8 15c1 1.3 2.5 2 4 2s3-.7 4-2"/></svg>';
 function statMarkup(icon, text){ return icon + '<span>' + text + '</span>'; }
+function pick(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
+function companionHTML(text){
+  return '<div class="companion"><span class="companion-avatar">' + ICON_FACE + '</span><span>' + escapeHtml(text) + '</span></div>';
+}
 
 /* ---------- state ---------- */
 function loadPersisted(){
@@ -806,6 +862,39 @@ function tagLabel(tag){
   return tag === 'review' ? 'Review' : tag === 'recap' ? 'Weekly recap' : tag === 'new' ? 'New word' : '';
 }
 
+/* ---------- companion messages ---------- */
+function dashboardCompanionText(dueCount){
+  if(dueCount > 0){
+    return pick([
+      `${dueCount} word${dueCount===1?'':'s'} is ready to come back for review.`,
+      `You've got ${dueCount} review word${dueCount===1?'':'s'} waiting — that's how they stick long-term.`
+    ]);
+  }
+  if(state.streak === 0){
+    return pick(["Ready to start your streak today?", "One small step gets your streak going.", "Your passport is waiting to be filled."]);
+  }
+  return pick([
+    `${state.streak} day${state.streak===1?'':'s'} strong — you're building a real habit.`,
+    `Day ${state.streak} of your streak. Keep it up.`,
+    "Consistency beats intensity — a few minutes today is enough."
+  ]);
+}
+function lessonCompanionText(){
+  return pick([
+    "Take your time with this one.",
+    "Say it out loud — hearing yourself say it helps it stick.",
+    "New word, new door.",
+    "No rush — read it twice before moving on."
+  ]);
+}
+function resultsCompanionText(s){
+  const total = s.questions.length;
+  const ratio = total ? s.correctCount / total : 0;
+  if(ratio === 1) return pick(["Perfect round — every word landed.", "Flawless! That's the whole set."]);
+  if(ratio >= 0.6) return pick(["Solid work today.", "Good progress — most of that stuck."]);
+  return pick(["A tough round, but mistakes are how words stick.", "That was a hard set — tomorrow's a fresh try."]);
+}
+
 /* ---------- daily challenge ---------- */
 function handleChallengeClick(){
   const practice = state.lastActiveDate === todayStr();
@@ -822,9 +911,56 @@ function beginChallenge(practice){
     picks = pickDailyChallengeWords();
   }
   currentSession = { mode:'challenge', questions: picks, idx:0, correctCount:0, practice: !!practice, isRecap };
+  const toTeach = !isRecap ? picks.filter(w => w.tag === 'new') : [];
+  if(toTeach.length > 0){
+    lessonQueue = toTeach;
+    lessonIdx = 0;
+    showScreen('screen-lesson');
+    renderLessonStep();
+  } else {
+    startChallengeQuiz(isRecap);
+  }
+}
+function startChallengeQuiz(isRecap){
   showScreen('screen-challenge');
   if(isRecap){ speak("Let's review this week's seven words.", 'en-US'); }
   renderQuizQuestion();
+}
+
+/* ---------- lesson (teaches new words before they're quizzed) ---------- */
+let lessonQueue = [];
+let lessonIdx = 0;
+function renderLessonStep(){
+  const w = lessonQueue[lessonIdx];
+  const container = document.getElementById('lessonBody');
+  const langCode = LANGS[state.language].code;
+  const isLast = lessonIdx === lessonQueue.length - 1;
+  const exampleBlock = w.example
+    ? `<div class="lesson-example">"${escapeHtml(w.example)}"<span class="lesson-example-en">${escapeHtml(w.exampleEn)}</span></div>
+       <div class="quiz-controls">
+         <button class="btn-icon" type="button" onclick="speak('${w.target.replace(/'/g,"\\'")}','${langCode}')">🔊 Hear the word</button>
+         <button class="btn-icon" type="button" onclick="speak('${w.example.replace(/'/g,"\\'")}','${langCode}')">🔊 Hear the sentence</button>
+       </div>`
+    : `<div class="quiz-controls">
+         <button class="btn-icon" type="button" onclick="speak('${w.target.replace(/'/g,"\\'")}','${langCode}')">🔊 Hear the word</button>
+       </div>`;
+  container.innerHTML = `
+    <div class="quiz-progress">New word ${lessonIdx+1} of ${lessonQueue.length}</div>
+    <div class="quiz-word">${escapeHtml(w.target)}</div>
+    <p class="quiz-hint">${escapeHtml(w.en)}</p>
+    ${exampleBlock}
+    ${companionHTML(lessonCompanionText())}
+    <button class="btn-primary" type="button" onclick="advanceLesson()">${isLast ? 'Start the challenge' : 'Next word'}</button>
+  `;
+  speak(w.target, langCode);
+}
+function advanceLesson(){
+  lessonIdx++;
+  if(lessonIdx < lessonQueue.length){
+    renderLessonStep();
+  } else {
+    startChallengeQuiz(false);
+  }
 }
 
 /* ---------- shared quiz engine ---------- */
@@ -946,6 +1082,7 @@ function renderDashboard(){
   const dueCount = countDueReviews();
   document.getElementById('dashReviewRow').style.display = dueCount > 0 ? 'flex' : 'none';
   document.getElementById('dashReviewCount').textContent = dueCount;
+  document.getElementById('dashCompanion').innerHTML = companionHTML(dashboardCompanionText(dueCount));
   updateHeaderStats();
 }
 function copyReferralCode(){
@@ -996,6 +1133,7 @@ function renderChallengeResults(s, awarded){
   document.getElementById('chScore').textContent = s.correctCount + ' / ' + s.questions.length;
   document.getElementById('chCoins').innerHTML = statMarkup(ICON_COIN, awarded ? ('+' + (s.correctCount*10)) : '+0');
   document.getElementById('chStreak').innerHTML = statMarkup(ICON_STREAK, state.streak);
+  document.getElementById('chCompanion').innerHTML = companionHTML(resultsCompanionText(s));
 }
 function backToDashboard(){
   renderDashboard();
