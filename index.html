@@ -258,6 +258,18 @@
     padding:12px 14px; margin-bottom:18px; font-size:14px; line-height:1.55; color: var(--ink);
   }
   .grammar-note-title{ font-weight:700; margin-bottom:4px; font-family: var(--serif); font-size:15px; }
+
+  .dict-entry{ padding:12px 0; border-bottom:1px solid var(--line); }
+  .dict-entry:last-child{ border-bottom:none; }
+  .dict-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; }
+  .dict-target{ font-family: var(--serif); font-size:17px; font-weight:600; }
+  .dict-en{ font-size:13px; color: var(--ink-soft); margin-top:2px; }
+  .dict-example{ font-size:13px; color: var(--ink-soft); margin-top:6px; font-style:italic; }
+  .dict-play{ flex:none; width:auto; padding:8px 10px; margin:0; }
+
+  .lesson-nav{ display:flex; gap:10px; }
+  .lesson-nav .btn-ghost{ width:auto; flex:1; margin-top:0; }
+  .lesson-nav .btn-primary{ flex:2; }
 </style>
 </head>
 <body>
@@ -392,6 +404,7 @@
       <div id="dashCompanion"></div>
 
       <button class="btn-primary" id="challengeBtn" onclick="handleChallengeClick()">Start today's challenge</button>
+      <button class="btn-ghost" type="button" id="dictBtn" onclick="openDictionary()">View my dictionary</button>
 
       <div class="section-label">Invite a fellow traveler</div>
       <p class="subtitle" style="margin-bottom:10px;">Share your code. When a friend redeems one, you both get 50 bonus coins.</p>
@@ -407,6 +420,16 @@
 
       <button class="btn-ghost" onclick="handleLogout()">Log out</button>
       <p class="fine">Prototype note: progress is saved to this browser only (no account backend), and voice recognition needs Chrome with mic access — a text box is always available as a backup.</p>
+    </div>
+  </section>
+
+  <!-- DICTIONARY (every word unlocked so far) -->
+  <section class="screen" id="screen-dictionary">
+    <div class="card">
+      <h1 class="title">Your dictionary</h1>
+      <p class="subtitle" id="dictSubtitle"></p>
+      <div id="dictionaryBody"></div>
+      <button class="btn-primary" type="button" onclick="backToDashboard()" style="margin-top:16px;">Back to passport</button>
     </div>
   </section>
 
@@ -1034,9 +1057,18 @@ function renderLessonStep(){
     <p class="quiz-hint">${escapeHtml(w.en)}</p>
     ${exampleBlock}
     ${companionHTML(lessonCompanionText())}
-    <button class="btn-primary" type="button" onclick="advanceLesson()">${isLast ? 'Start the challenge' : 'Next word'}</button>
+    <div class="lesson-nav">
+      ${lessonIdx > 0 ? `<button class="btn-ghost" type="button" onclick="lessonBack()">◀ Previous</button>` : ''}
+      <button class="btn-primary" type="button" onclick="advanceLesson()">${isLast ? 'Start the challenge' : 'Next word'}</button>
+    </div>
   `;
   speak(w.target, langCode);
+}
+function lessonBack(){
+  if(lessonIdx > 0){
+    lessonIdx--;
+    renderLessonStep();
+  }
 }
 function advanceLesson(){
   lessonIdx++;
@@ -1168,7 +1200,40 @@ function renderDashboard(){
   document.getElementById('dashReviewRow').style.display = dueCount > 0 ? 'flex' : 'none';
   document.getElementById('dashReviewCount').textContent = dueCount;
   document.getElementById('dashCompanion').innerHTML = companionHTML(dashboardCompanionText(dueCount));
+  const wordCount = state.introducedOrder.filter(k => k.startsWith(state.language + '|')).length;
+  document.getElementById('dictBtn').textContent = `View my dictionary (${wordCount} word${wordCount===1?'':'s'})`;
   updateHeaderStats();
+}
+function openDictionary(){
+  renderDictionary();
+  showScreen('screen-dictionary');
+}
+function renderDictionary(){
+  const language = state.language;
+  const idx = buildWordIndex(language);
+  const prefix = language + '|';
+  const keys = state.introducedOrder.filter(k => k.startsWith(prefix));
+  const container = document.getElementById('dictionaryBody');
+  const langCode = LANGS[language].code;
+  document.getElementById('dictSubtitle').textContent =
+    keys.length === 0
+      ? `No words unlocked yet in ${LANGS[language].name} — complete a challenge to start building your dictionary.`
+      : `${keys.length} word${keys.length===1?'':'s'} unlocked in ${LANGS[language].name}, in the order you learned them.`;
+  container.innerHTML = keys.map(key=>{
+    const w = idx[key];
+    if(!w) return '';
+    const exampleLine = w.example ? `<div class="dict-example">"${escapeHtml(w.example)}"</div>` : '';
+    return `<div class="dict-entry">
+      <div class="dict-row">
+        <div>
+          <div class="dict-target">${escapeHtml(w.target)}</div>
+          <div class="dict-en">${escapeHtml(w.en)}</div>
+        </div>
+        <button class="btn-icon dict-play" type="button" onclick="speak('${w.target.replace(/'/g,"\\'")}','${langCode}')">🔊</button>
+      </div>
+      ${exampleLine}
+    </div>`;
+  }).join('');
 }
 function copyReferralCode(){
   const val = state.referralCode;
