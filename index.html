@@ -253,6 +253,11 @@
     width:24px; height:24px; border-radius:50%; background: var(--paper);
     display:flex; align-items:center; justify-content:center; flex-shrink:0; color: var(--primary);
   }
+  .grammar-note{
+    background: var(--gold-tint); border-left:3px solid var(--gold); border-radius:8px;
+    padding:12px 14px; margin-bottom:18px; font-size:14px; line-height:1.55; color: var(--ink);
+  }
+  .grammar-note-title{ font-weight:700; margin-bottom:4px; font-family: var(--serif); font-size:15px; }
 </style>
 </head>
 <body>
@@ -460,7 +465,11 @@ const LANGS = {
       {en:'consequently', target:'por consiguiente'}, {en:'to strive', target:'esforzarse'}, {en:'outcome', target:'resultado'},
       {en:'widespread', target:'generalizado'}, {en:'to acknowledge', target:'reconocer'}
     ]
-  }},
+  }, grammar: [
+    {title:'Nouns have gender', body:'Spanish nouns are masculine or feminine. Most words ending in -o are masculine (el gato), and most ending in -a are feminine (la casa). The article changes to match: el / la.'},
+    {title:'Regular -er verbs', body:'Verbs like comer (to eat) follow a pattern: como (I eat), comes (you eat), come (he/she eats). Once you know the pattern, you can conjugate many verbs the same way.'},
+    {title:'Adjectives usually follow the noun', body:'Unlike English, Spanish adjectives typically come after the noun they describe: casa grande (big house), not grande casa.'}
+  ]},
   fr: { name: 'French', code: 'fr-FR', flag: '🇫🇷', wordBank: {
     beginner: [
       {en:'house', target:'maison', example:'Ma maison est grande.', exampleEn:'My house is big.'},
@@ -484,7 +493,11 @@ const LANGS = {
       {en:'outcome', target:'resultat', alts:['résultat']}, {en:'widespread', target:'repandu', alts:['répandu']},
       {en:'to acknowledge', target:'reconnaitre', alts:['reconnaître']}
     ]
-  }},
+  }, grammar: [
+    {title:'Nouns have gender', body:"French nouns are masculine or feminine, shown by the article: le chat (masculine), la maison (feminine). There's no easy shortcut — gender is usually memorized with the word itself."},
+    {title:'Regular -er verbs', body:'Verbs like manger (to eat) follow a pattern: je mange, tu manges, il/elle mange. Most French verbs ending in -er conjugate the same way.'},
+    {title:'Adjective placement varies', body:'Most French adjectives follow the noun (un livre intéressant), but a handful of common short ones — like bon, grand, petit — come before it (une bonne amie).'}
+  ]},
   de: { name: 'German', code: 'de-DE', flag: '🇩🇪', wordBank: {
     beginner: [
       {en:'house', target:'haus', example:'Mein Haus ist groß.', exampleEn:'My house is big.'},
@@ -506,7 +519,11 @@ const LANGS = {
       {en:'consequently', target:'folglich'}, {en:'to strive', target:'sich bemuhen', alts:['sich bemühen']},
       {en:'outcome', target:'ergebnis'}, {en:'widespread', target:'weit verbreitet'}, {en:'to acknowledge', target:'anerkennen'}
     ]
-  }},
+  }, grammar: [
+    {title:'Nouns have three genders', body:'German nouns are der (masculine), die (feminine), or das (neuter) — der Hund, die Katze, das Haus. German nouns are also always capitalized, even mid-sentence.'},
+    {title:"Verb endings change with the subject", body:'Regular verbs take endings like -e, -st, -t: ich spiele (I play), du spielst (you play), er spielt (he plays). The ending tells you who is doing the action.'},
+    {title:'The verb comes second', body:'In a German main clause, the conjugated verb is always the second element, even if the sentence does not start with the subject: Heute esse ich Obst (Today I eat fruit).'}
+  ]},
   it: { name: 'Italian', code: 'it-IT', flag: '🇮🇹', wordBank: {
     beginner: [
       {en:'house', target:'casa', example:'La mia casa è grande.', exampleEn:'My house is big.'},
@@ -528,7 +545,11 @@ const LANGS = {
       {en:'consequently', target:'di conseguenza'}, {en:'to strive', target:'sforzarsi'}, {en:'outcome', target:'risultato'},
       {en:'widespread', target:'diffuso'}, {en:'to acknowledge', target:'riconoscere'}
     ]
-  }},
+  }, grammar: [
+    {title:'Nouns have gender', body:'Italian nouns are masculine or feminine. Many masculine nouns end in -o (il cane) and many feminine nouns end in -a (la casa), with the article agreeing: il / la.'},
+    {title:'Regular -are verbs', body:'Verbs like mangiare (to eat) follow a pattern: mangio (I eat), mangi (you eat), mangia (he/she eats).'},
+    {title:'Adjectives usually follow the noun', body:'Most Italian adjectives come after the noun: libro interessante (interesting book) — the reverse of typical English word order.'}
+  ]},
   pt: { name: 'Portuguese', code: 'pt-BR', flag: '🇵🇹', wordBank: {
     beginner: [
       {en:'house', target:'casa', example:'Minha casa é grande.', exampleEn:'My house is big.'},
@@ -551,7 +572,11 @@ const LANGS = {
       {en:'to strive', target:'esforcar-se', alts:['esforçar-se']}, {en:'outcome', target:'resultado'},
       {en:'widespread', target:'generalizado'}, {en:'to acknowledge', target:'reconhecer'}
     ]
-  }}
+  }, grammar: [
+    {title:'Nouns have gender', body:'Portuguese nouns are masculine or feminine, usually shown by the article: o cachorro (masculine), a casa (feminine). Many masculine nouns end in -o and feminine ones in -a.'},
+    {title:'Regular -er verbs', body:'Verbs like comer (to eat) follow a pattern: como (I eat), come (you/he/she eat(s)). Recognizing the pattern helps you conjugate similar verbs.'},
+    {title:'Adjectives usually follow the noun', body:'Portuguese adjectives typically come after the noun they describe: livro interessante (interesting book).'}
+  ]}
 };
 const LEVEL_ORDER = ['beginner','intermediate','advanced'];
 const STORAGE_KEY = 'lingoPassportV1';
@@ -569,7 +594,7 @@ function companionHTML(text){
 function loadPersisted(){
   const defaults = {
     credits:0, streak:0, lastActiveDate:null, referralCode:null, referralPoints:0, redeemedCodes:[],
-    progress:{}, introducedOrder:[], completedDays:0, recapPending:false
+    progress:{}, introducedOrder:[], completedDays:0, recapPending:false, grammarShown:{}
   };
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -583,7 +608,7 @@ function savePersisted(){
       credits: state.credits, streak: state.streak, lastActiveDate: state.lastActiveDate,
       referralCode: state.referralCode, referralPoints: state.referralPoints, redeemedCodes: state.redeemedCodes,
       progress: state.progress, introducedOrder: state.introducedOrder,
-      completedDays: state.completedDays, recapPending: state.recapPending
+      completedDays: state.completedDays, recapPending: state.recapPending, grammarShown: state.grammarShown
     }));
   }catch(e){}
 }
@@ -808,9 +833,14 @@ function countDueReviews(){
   const prefix = state.language + '|';
   return Object.keys(state.progress).filter(k => k.startsWith(prefix) && state.progress[k].nextDue <= today).length;
 }
+const NEW_WORDS_PER_DAY = 3;
+const GRAMMAR_THRESHOLDS = [0, 4, 8];
+function orderedCurriculum(language){
+  const b = LANGS[language].wordBank;
+  return [].concat(b.beginner, b.intermediate, b.advanced);
+}
 function pickDailyChallengeWords(){
   const language = state.language;
-  const level = state.actualLevel || state.selfLevel || 'beginner';
   const idx = buildWordIndex(language);
   const today = todayStr();
   const prefix = language + '|';
@@ -823,17 +853,64 @@ function pickDailyChallengeWords(){
   const used = new Set();
   due.slice(0,5).forEach(w=>{ chosen.push(Object.assign({tag:'review'}, w)); used.add(wordKey(language,w)); });
 
-  if(chosen.length < 5){
-    const seed = today + language + level;
-    const candidates = seededShuffle(LANGS[language].wordBank[level], seed).filter(w=> !used.has(wordKey(language,w)));
-    for(const w of candidates){
-      if(chosen.length >= 5) break;
+  const newSlots = Math.min(5 - chosen.length, NEW_WORDS_PER_DAY);
+  if(newSlots > 0){
+    let added = 0;
+    for(const w of orderedCurriculum(language)){
+      if(added >= newSlots) break;
       const key = wordKey(language, w);
-      chosen.push(Object.assign({tag: state.progress[key] ? 'review' : 'new'}, w));
+      if(used.has(key) || state.progress[key]) continue;
+      chosen.push(Object.assign({tag:'new'}, w));
       used.add(key);
+      added++;
+    }
+  }
+  if(chosen.length < 5){
+    const extra = Object.keys(state.progress)
+      .filter(k => k.startsWith(prefix) && !used.has(k))
+      .sort((a,b)=> (state.progress[a].lastSeen||'').localeCompare(state.progress[b].lastSeen||''))
+      .map(k => idx[k]).filter(Boolean);
+    for(const w of extra){
+      if(chosen.length >= 5) break;
+      chosen.push(Object.assign({tag:'review'}, w));
+      used.add(wordKey(language,w));
     }
   }
   return chosen.slice(0,5);
+}
+function seedKnownWordsFromAssessment(){
+  const language = state.language;
+  const prefix = language + '|';
+  const alreadySeeded = Object.keys(state.progress).some(k => k.startsWith(prefix));
+  if(alreadySeeded) return;
+  const skipLevels = state.actualLevel === 'advanced' ? ['beginner','intermediate']
+                    : state.actualLevel === 'intermediate' ? ['beginner']
+                    : [];
+  if(skipLevels.length === 0) return;
+  const today = todayStr();
+  const due = new Date(); due.setDate(due.getDate() + 3);
+  const dueStr = due.toISOString().slice(0,10);
+  skipLevels.forEach(lvl=>{
+    LANGS[language].wordBank[lvl].forEach(w=>{
+      const key = wordKey(language, w);
+      state.progress[key] = { box:2, nextDue: dueStr, lastSeen: today };
+      state.introducedOrder.push(key);
+    });
+  });
+  savePersisted();
+}
+function pickGrammarNote(language, priorCount){
+  if(!state.grammarShown[language]) state.grammarShown[language] = [];
+  const shown = state.grammarShown[language];
+  const notes = LANGS[language].grammar || [];
+  for(let i=0;i<GRAMMAR_THRESHOLDS.length;i++){
+    if(priorCount >= GRAMMAR_THRESHOLDS[i] && !shown.includes(i) && notes[i]){
+      shown.push(i);
+      savePersisted();
+      return notes[i];
+    }
+  }
+  return null;
 }
 function getRecapWords(){
   const language = state.language;
@@ -915,6 +992,8 @@ function beginChallenge(practice){
   if(toTeach.length > 0){
     lessonQueue = toTeach;
     lessonIdx = 0;
+    const priorCount = state.introducedOrder.filter(k => k.startsWith(state.language + '|')).length;
+    currentLessonGrammar = pickGrammarNote(state.language, priorCount);
     showScreen('screen-lesson');
     renderLessonStep();
   } else {
@@ -930,11 +1009,15 @@ function startChallengeQuiz(isRecap){
 /* ---------- lesson (teaches new words before they're quizzed) ---------- */
 let lessonQueue = [];
 let lessonIdx = 0;
+let currentLessonGrammar = null;
 function renderLessonStep(){
   const w = lessonQueue[lessonIdx];
   const container = document.getElementById('lessonBody');
   const langCode = LANGS[state.language].code;
   const isLast = lessonIdx === lessonQueue.length - 1;
+  const grammarBlock = (lessonIdx === 0 && currentLessonGrammar)
+    ? `<div class="grammar-note"><div class="grammar-note-title">${escapeHtml(currentLessonGrammar.title)}</div><p>${escapeHtml(currentLessonGrammar.body)}</p></div>`
+    : '';
   const exampleBlock = w.example
     ? `<div class="lesson-example">"${escapeHtml(w.example)}"<span class="lesson-example-en">${escapeHtml(w.exampleEn)}</span></div>
        <div class="quiz-controls">
@@ -945,6 +1028,7 @@ function renderLessonStep(){
          <button class="btn-icon" type="button" onclick="speak('${w.target.replace(/'/g,"\\'")}','${langCode}')">🔊 Hear the word</button>
        </div>`;
   container.innerHTML = `
+    ${grammarBlock}
     <div class="quiz-progress">New word ${lessonIdx+1} of ${lessonQueue.length}</div>
     <div class="quiz-word">${escapeHtml(w.target)}</div>
     <p class="quiz-hint">${escapeHtml(w.en)}</p>
@@ -1047,6 +1131,7 @@ function renderResults(){
 }
 function enterDashboard(){
   ensureReferralCode();
+  seedKnownWordsFromAssessment();
   renderDashboard();
   showScreen('screen-dashboard');
 }
